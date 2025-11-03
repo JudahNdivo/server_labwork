@@ -1,71 +1,57 @@
 <?php
 session_start();
 
-// initializing variables
+// Initializing variables
 $username = "";
 $errors = array();
 
-// connect to the database
-$db = mysqli_connect('localhost', 'root', '', 'cafe');
+// Connect to the database
+$db = mysqli_connect('localhost', 'group1_user', 'Group1Pass@2024', 'GROUP1');
+
+// Check connection
+if (!$db) {
+    die("Connection failed: " . mysqli_connect_error());
+}
 
 // REGISTER USER
 if (isset($_POST['reg_user'])) {
-    // receive all input values from the form
+    // Receive all input values from the form
     $username = mysqli_real_escape_string($db, $_POST['username']);
     $password = mysqli_real_escape_string($db, $_POST['password']);
     $confirm_password = mysqli_real_escape_string($db, $_POST['confirm_password']);
     
-    // form validation: ensure that the form is correctly filled ...
-    // by adding (array_push()) corresponding error unto $errors array
-    if (empty($username)) { array_push($errors, "Username is required"); }
-    if (empty($password)) { array_push($errors, "Password is required"); }
+    // Form validation
+    if (empty($username)) { 
+        array_push($errors, "Username is required"); 
+    }
+    if (empty($password)) { 
+        array_push($errors, "Password is required"); 
+    }
     if ($password != $confirm_password) {
         array_push($errors, "The two passwords do not match");
     }
     
-    // first check the database to make sure
-    // a user does not already exist with the same username
+    // Check if user already exists
     $user_check_query = "SELECT * FROM user WHERE username='$username' LIMIT 1";
     $result = mysqli_query($db, $user_check_query);
     $user = mysqli_fetch_assoc($result);
     
-    if ($user) { // if user exists
+    if ($user) {
         if ($user['username'] === $username) {
             array_push($errors, "Username already exists");
         }
     }
     
-    // Finally, register user if there are no errors in the form
+    // Register user if no errors
     if (count($errors) == 0) {
-        $password = md5($password);//encrypt the password before saving in the database
-        
-        $query = "INSERT INTO user (username, password)
-                  VALUES('$username', '$password')";
+        $password = md5($password); // Encrypt password
+        $query = "INSERT INTO user (username, password) VALUES('$username', '$password')";
         mysqli_query($db, $query);
         $_SESSION['username'] = $username;
-        $_SESSION['success'] = "You have signed up successfuly.";
+        $_SESSION['success'] = "You have signed up successfully.";
         header('location: index.php');
-}}
-$result = mysqli_query($db, $user_check_query);
-$user = mysqli_fetch_assoc($result);
-
-if ($user) { // if user exists
-    if ($user['username'] === $username) {
-        array_push($errors, "Username already exists");
+        exit();
     }
-}
-
-// Finally, register user if there are no errors in the form
-if (count($errors) == 0) {
-    $password = md5($password);//encrypt the password before saving in the database
-    
-    $query = "INSERT INTO user (username, password)
-              VALUES('$username', '$password')";
-    mysqli_query($db, $query);
-    $_SESSION['username'] = $username;
-    $_SESSION['success'] = "You have signed up successfully.";
-    header('location: index.php');
-}
 }
 
 // LOGIN USER
@@ -84,14 +70,15 @@ if (isset($_POST['login_user'])) {
         $password = md5($password);
         $query = "SELECT * FROM user WHERE username='$username' AND password='$password'";
         $results = mysqli_query($db, $query);
+        
         if (mysqli_num_rows($results) == 1) {
             $_SESSION['username'] = $username;
             $_SESSION['success'] = "You are now logged in.";
             header('location: index.php');
-        }else {
+            exit();
+        } else {
             array_push($errors, "Wrong username/password");
         }
     }
 }
-
 ?>
